@@ -12,9 +12,8 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // --- UI State (Untuk Animasi Hover/Focus) ---
-    const [isButtonHovered, setIsButtonHovered] = useState(false);
-    const [focusedInput, setFocusedInput] = useState(null);
+    // --- UI State ---
+    const [hover, setHover] = useState(false);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -33,18 +32,13 @@ export default function LoginPage() {
             if (data.success || data.token) {
                 const token = data.token || data.access_token;
                 localStorage.setItem('token', token);
-                
-                if (data.user) {
-                    localStorage.setItem('user_name', data.user.name);
-                }
-
+                if (data.user) localStorage.setItem('user_name', data.user.name);
                 router.push('/dashboard'); 
             } else {
-                setError(data.message || 'Email atau password salah.');
+                setError(data.message || 'Kredensial tidak valid.');
             }
-
         } catch (err) {
-            setError('Gagal menghubungi server. Cek koneksi internet Anda.');
+            setError('Gagal terhubung ke server.');
         } finally {
             setLoading(false);
         }
@@ -52,242 +46,214 @@ export default function LoginPage() {
 
     return (
         <div style={styles.container}>
-            {/* --- Global Keyframes --- */}
+            {/* Simple CSS Reset & Animation */}
             <style jsx global>{`
-                @keyframes gradientBG {
-                    0% { background-position: 0% 50%; }
-                    50% { background-position: 100% 50%; }
-                    100% { background-position: 0% 50%; }
-                }
-                @keyframes slideUp {
-                    0% { opacity: 0; transform: translateY(40px); }
-                    100% { opacity: 1; transform: translateY(0); }
-                }
-                @keyframes shake {
-                    0%, 100% { transform: translateX(0); }
-                    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-                    20%, 40%, 60%, 80% { transform: translateX(5px); }
+                body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
             `}</style>
 
-            {/* --- Dekorasi Background (Blobs) --- */}
-            <div style={styles.blob1}></div>
-            <div style={styles.blob2}></div>
-
             <div style={styles.card}>
-                
-                {/* Header */}
-                <div style={{ textAlign: 'center', marginBottom: '35px' }}>
-                    <div style={{ fontSize: '40px', marginBottom: '10px' }}>🔐</div>
-                    <h1 style={styles.title}>Welcome Back!</h1>
-                    <p style={styles.subtitle}>Silakan masuk ke akun Kampus App Anda</p>
+                {/* Header Minimalis */}
+                <div style={styles.header}>
+                    <div style={styles.logoIcon}>🎓</div>
+                    <h1 style={styles.title}>Masuk Akun</h1>
+                    <p style={styles.subtitle}>Masukkan detail akun Anda untuk melanjutkan.</p>
                 </div>
 
-                {/* Pesan Error dengan Animasi Shake */}
+                {/* Pesan Error Simple */}
                 {error && (
                     <div style={styles.errorBox}>
-                        ⚠️ {error}
+                        <span style={{marginRight: '8px'}}>⚠️</span> {error}
                     </div>
                 )}
 
-                <form onSubmit={handleLogin}>
-                    {/* Input Email */}
-                    <div style={{ marginBottom: '20px' }}>
-                        <label style={styles.label}>Email Address</label>
+                <form onSubmit={handleLogin} style={styles.form}>
+                    <div style={styles.inputGroup}>
+                        <label style={styles.label}>Email</label>
                         <input 
                             type="email" 
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            onFocus={() => setFocusedInput('email')}
-                            onBlur={() => setFocusedInput(null)}
                             required
-                            placeholder="username/email"
-                            style={{
-                                ...styles.input,
-                                ...(focusedInput === 'email' ? styles.inputFocus : {})
-                            }}
+                            placeholder="name@example.com"
+                            style={styles.input}
                         />
                     </div>
 
-                    {/* Input Password */}
-                    <div style={{ marginBottom: '30px' }}>
-                        <label style={styles.label}>Password</label>
+                    <div style={styles.inputGroup}>
+                        <div style={styles.labelRow}>
+                            <label style={styles.label}>Password</label>
+                            {/* Opsional: Link Lupa Password */}
+                            <a href="#" style={styles.forgotPass}>Lupa password?</a>
+                        </div>
                         <input 
                             type="password" 
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            onFocus={() => setFocusedInput('password')}
-                            onBlur={() => setFocusedInput(null)}
                             required
-                            placeholder="••••••••"
-                            style={{
-                                ...styles.input,
-                                ...(focusedInput === 'password' ? styles.inputFocus : {})
-                            }}
+                            placeholder="Masukan password"
+                            style={styles.input}
                         />
                     </div>
 
                     <button 
                         type="submit" 
                         disabled={loading}
-                        onMouseEnter={() => setIsButtonHovered(true)}
-                        onMouseLeave={() => setIsButtonHovered(false)}
+                        onMouseEnter={() => setHover(true)}
+                        onMouseLeave={() => setHover(false)}
                         style={{
                             ...styles.button,
-                            ...(loading ? styles.buttonDisabled : {}),
-                            ...(isButtonHovered && !loading ? styles.buttonHover : {})
+                            ...(hover ? styles.buttonHover : {}),
+                            ...(loading ? styles.buttonDisabled : {})
                         }}
                     >
-                        {loading ? 'Sedang Memproses...' : 'Masuk Dashboard'}
+                        {loading ? 'Memuat...' : 'Masuk sekarang'}
                     </button>
                 </form>
 
-                <div style={styles.footer}>
-                    &copy; 2025 Sistem Informasi Akademik
-                </div>
+                <p style={styles.footerText}>
+                    Belum punya akun? <a href="#" style={styles.link}>Hubungi Admin</a>
+                </p>
+            </div>
+            
+            <div style={styles.copyright}>
+                &copy; 2025 Kampus App. All rights reserved.
             </div>
         </div>
     );
 }
 
-// --- Styles Object ---
+// --- Modern Minimalist Styles ---
 const styles = {
     container: {
         minHeight: '100vh',
         display: 'flex',
+        flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        background: 'linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab)',
-        backgroundSize: '400% 400%',
-        animation: 'gradientBG 15s ease infinite',
-        fontFamily: "'Inter', sans-serif",
-        padding: '20px',
-        position: 'relative',
-        overflow: 'hidden',
-    },
-    blob1: {
-        position: 'absolute',
-        top: '5%',
-        left: '15%',
-        width: '400px',
-        height: '400px',
-        background: 'rgba(255, 255, 255, 0.3)',
-        borderRadius: '50%',
-        filter: 'blur(90px)',
-        zIndex: 0,
-    },
-    blob2: {
-        position: 'absolute',
-        bottom: '5%',
-        right: '15%',
-        width: '350px',
-        height: '350px',
-        background: 'rgba(255, 255, 255, 0.2)',
-        borderRadius: '50%',
-        filter: 'blur(100px)',
-        zIndex: 0,
+        backgroundColor: '#f9fafb', // Light Gray (sangat bersih)
+        color: '#111827',
     },
     card: {
-        background: 'rgba(255, 255, 255, 0.9)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        padding: '50px 40px',
-        borderRadius: '24px',
-        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.1)',
         width: '100%',
-        maxWidth: '420px',
-        zIndex: 1,
-        border: '1px solid rgba(255, 255, 255, 0.6)',
-        animation: 'slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)', 
+        maxWidth: '400px',
+        padding: '40px',
+        backgroundColor: '#ffffff',
+        borderRadius: '16px',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)', // Shadow sangat halus
+        border: '1px solid #e5e7eb', // Border tipis abu-abu
+        animation: 'fadeIn 0.5s ease-out',
     },
-    title: {
-        color: '#1e293b', 
-        margin: '0', 
-        fontSize: '28px', 
-        fontWeight: '800',
-        letterSpacing: '-0.5px',
+    header: {
+        marginBottom: '32px',
+        textAlign: 'center',
     },
-    subtitle: {
-        color: '#64748b', 
-        margin: '8px 0 0 0', 
-        fontSize: '14px',
-        fontWeight: '500',
-    },
-    errorBox: {
-        background: 'rgba(254, 226, 226, 0.9)',
-        color: '#b91c1c',
+    logoIcon: {
+        fontSize: '32px',
+        marginBottom: '16px',
+        display: 'inline-block',
+        background: '#eff6ff',
         padding: '12px',
         borderRadius: '12px',
-        marginBottom: '25px',
+    },
+    title: {
+        fontSize: '24px',
+        fontWeight: '700',
+        margin: '0 0 8px 0',
+        color: '#111827',
+        letterSpacing: '-0.025em',
+    },
+    subtitle: {
         fontSize: '14px',
-        textAlign: 'center',
-        border: '1px solid #fca5a5',
-        animation: 'shake 0.5s ease-in-out',
-        fontWeight: '500',
+        color: '#6b7280',
+        margin: 0,
+        lineHeight: '1.5',
+    },
+    form: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+    },
+    inputGroup: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+    },
+    labelRow: {
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
     label: {
-        display: 'block',
-        marginBottom: '8px',
-        color: '#334155',
-        fontSize: '13px',
-        fontWeight: '600',
-        textTransform: 'uppercase',
-        letterSpacing: '0.5px',
+        fontSize: '14px',
+        fontWeight: '500',
+        color: '#374151',
     },
-    
-    // --- PERBAIKAN DI SINI (Memecah shorthand border) ---
+    forgotPass: {
+        fontSize: '12px',
+        color: '#2563eb',
+        textDecoration: 'none',
+        fontWeight: '500',
+    },
     input: {
-        width: '100%',
-        padding: '14px 16px',
-        borderRadius: '12px',
-        
-        // Pecah properti border:
-        borderWidth: '2px',
-        borderStyle: 'solid',
-        borderColor: '#e2e8f0',
-        
-        fontSize: '15px',
+        padding: '12px 16px',
+        borderRadius: '8px',
+        border: '1px solid #d1d5db',
+        fontSize: '14px',
+        color: '#111827',
         outline: 'none',
-        transition: 'all 0.3s ease',
-        backgroundColor: 'rgba(255, 255, 255, 0.8)',
-        color: '#334155',
+        transition: 'border-color 0.2s, box-shadow 0.2s',
+        backgroundColor: '#f9fafb',
     },
-    
-    inputFocus: {
-        borderColor: '#2563eb', // Sekarang aman karena borderColor sudah didefinisikan terpisah di atas
-        backgroundColor: '#ffffff',
-        boxShadow: '0 0 0 4px rgba(37, 99, 235, 0.1)',
+    errorBox: {
+        backgroundColor: '#fef2f2',
+        border: '1px solid #fee2e2',
+        color: '#991b1b',
+        padding: '12px',
+        borderRadius: '8px',
+        fontSize: '13px',
+        marginBottom: '20px',
+        display: 'flex',
+        alignItems: 'center',
     },
     button: {
-        width: '100%',
-        padding: '16px',
-        background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+        marginTop: '10px',
+        padding: '12px',
+        backgroundColor: '#111827', // Hitam/Dark Slate (sangat modern)
         color: 'white',
         border: 'none',
-        borderRadius: '12px',
-        fontSize: '16px',
+        borderRadius: '8px',
+        fontSize: '14px',
         fontWeight: '600',
         cursor: 'pointer',
-        transition: 'all 0.3s ease',
-        boxShadow: '0 10px 15px -3px rgba(37, 99, 235, 0.3)',
-        transform: 'translateY(0)',
+        transition: 'all 0.2s ease',
     },
     buttonHover: {
-        transform: 'translateY(-2px)',
-        boxShadow: '0 15px 25px -5px rgba(37, 99, 235, 0.4)',
-        filter: 'brightness(1.1)',
+        backgroundColor: '#000000',
+        transform: 'translateY(-1px)',
     },
     buttonDisabled: {
-        background: '#94a3b8',
+        backgroundColor: '#9ca3af',
         cursor: 'not-allowed',
         transform: 'none',
-        boxShadow: 'none',
     },
-    footer: {
-        marginTop: '30px', 
-        textAlign: 'center', 
-        fontSize: '12px', 
-        color: '#94a3b8',
-        fontWeight: '500',
+    footerText: {
+        marginTop: '24px',
+        textAlign: 'center',
+        fontSize: '13px',
+        color: '#6b7280',
+    },
+    link: {
+        color: '#2563eb',
+        textDecoration: 'none',
+        fontWeight: '600',
+    },
+    copyright: {
+        marginTop: '40px',
+        fontSize: '12px',
+        color: '#9ca3af',
     }
 };

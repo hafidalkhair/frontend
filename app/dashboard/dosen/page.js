@@ -19,38 +19,50 @@ export default function DosenPage() {
             router.push('/login');
             return;
         }
+
         setUserName(name);
 
+        // Pastikan endpoint sesuai dengan route di Laravel (api/dosen)
         fetch('https://hafid.copium.id/api/dosens', {
-            headers: { 
+            method: 'GET',
+            headers: {
                 'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             }
         })
-        .then(res => res.json())
+        .then(res => {
+            if (res.status === 401) throw new Error('Sesi habis');
+            return res.json();
+        })
         .then(data => {
             setDosens(data.data || data);
             setLoading(false);
         })
         .catch(err => {
             console.error(err);
+            if (err.message.includes('Sesi habis')) {
+                localStorage.removeItem('token');
+                router.push('/login');
+            }
             setLoading(false);
         });
+
     }, [router]);
 
-    // --- 2. Logout & Delete Logic ---
+    // --- 2. Logout ---
     const handleLogout = () => {
-        if(confirm('Yakin ingin keluar?')) {
+        if(confirm('Yakin ingin keluar dari sistem?')) {
             localStorage.removeItem('token');
             localStorage.removeItem('user_name');
             router.push('/login');
         }
     };
 
+    // --- 3. Delete ---
     const handleDelete = async (id) => {
-        if (!confirm('Apakah Anda yakin ingin menghapus data dosen ini?')) return;
+        if (!confirm('Hapus data dosen ini secara permanen?')) return;
+
         const token = localStorage.getItem('token');
-        
         try {
             const res = await fetch(`https://hafid.copium.id/api/dosens/${id}`, {
                 method: 'DELETE',
@@ -58,7 +70,7 @@ export default function DosenPage() {
             });
 
             if (res.ok) {
-                setDosens(dosens.filter(d => d.id !== id));
+                setDosens(dosens.filter((d) => d.id !== id));
             } else {
                 alert('Gagal menghapus data');
             }
@@ -69,267 +81,211 @@ export default function DosenPage() {
 
     return (
         <div style={styles.container}>
-            {/* Global Keyframes Animation */}
             <style jsx global>{`
-                @keyframes gradientBG {
-                    0% { background-position: 0% 50%; }
-                    50% { background-position: 100% 50%; }
-                    100% { background-position: 0% 50%; }
-                }
-                @keyframes slideIn {
-                    from { opacity: 0; transform: translateY(20px); }
+                body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; }
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
                     to { opacity: 1; transform: translateY(0); }
-                }
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
                 }
             `}</style>
 
-            {/* Background Blobs */}
-            <div style={styles.blob1}></div>
-            <div style={styles.blob2}></div>
-
-            <div style={styles.glassPanel}>
-                
-                {/* --- HEADER --- */}
-                <header style={styles.header}>
-                    <div>
-                        <h1 style={styles.title}>Dashboard Admin</h1>
-                        <p style={styles.subtitle}>👋 Halo, <strong>{userName || 'Admin'}</strong></p>
+            {/* --- TOP NAVBAR --- */}
+            <nav style={styles.navbar}>
+                <div style={styles.navContent}>
+                    <div style={styles.brand}>
+                        <span style={styles.logoIcon}>🎓</span>
+                        Kampus App
                     </div>
-                    <button onClick={handleLogout} style={styles.logoutBtn}>Log Out</button>
-                </header>
-
-                <hr style={styles.divider} />
-
-                {/* --- STATS CARD --- */}
-                <div style={styles.statsContainer}>
-                    <div style={styles.statCard}>
-                        <span style={{fontSize: '24px'}}>👨‍🏫</span>
-                        <div>
-                            <div style={{fontSize: '12px', color: '#64748b'}}>Total Dosen</div>
-                            <div style={{fontSize: '20px', fontWeight: 'bold', color: '#1e293b'}}>{dosens.length}</div>
+                    <div style={styles.profileSection}>
+                        <div style={styles.userBadge}>
+                            <div style={styles.avatarSmall}>{userName ? userName.charAt(0).toUpperCase() : 'A'}</div>
+                            <span style={styles.userName}>{userName || 'Admin'}</span>
                         </div>
+                        <button onClick={handleLogout} style={styles.logoutBtn}>
+                            Keluar
+                        </button>
                     </div>
                 </div>
+            </nav>
 
-                {/* --- NAVIGATION & ACTION --- */}
-                <div style={styles.actionBar}>
-                    <div style={styles.navGroup}>
-                        <Link href="/dashboard">
-                            <button style={styles.navBtnInactive}>Data Mahasiswa</button>
-                        </Link>
-                        <button style={styles.navBtnActive}>Data Dosen</button>
+            <main style={styles.mainContent}>
+                
+                {/* --- HEADER --- */}
+                <div style={styles.pageHeader}>
+                    <div>
+                        <h1 style={styles.pageTitle}>Dashboard Dosen</h1>
+                        <p style={styles.pageSubtitle}>Kelola data pengajar dan status kepegawaian.</p>
                     </div>
-
                     <Link href="/dashboard/dosen/create">
-                        <button style={styles.addBtn}>+ Tambah Dosen</button>
+                        <button style={styles.addBtn}>
+                            + Tambah Dosen
+                        </button>
                     </Link>
                 </div>
 
-                {/* --- LIST DATA --- */}
-                <div style={styles.listContainer}>
+                {/* --- STATS --- */}
+                <div style={styles.statsGrid}>
+                    <div style={styles.statCard}>
+                        <div style={styles.statLabel}>Total Dosen</div>
+                        <div style={styles.statValue}>{dosens.length}</div>
+                        <div style={styles.statDesc}>Pengajar terdaftar aktif</div>
+                    </div>
+                     <div style={styles.statCard}>
+                        <div style={styles.statLabel}>Status Data</div>
+                        <div style={styles.statValueActive}>Sinkron</div>
+                    </div>
+                </div>
+
+                {/* --- TABS --- */}
+                <div style={styles.tabsContainer}>
+                    <Link href="/dashboard" style={{textDecoration: 'none'}}>
+                        <button style={styles.tabInactive}>Mahasiswa</button>
+                    </Link>
+                    <button style={styles.tabActive}>Dosen Pengajar</button>
+                </div>
+
+                {/* --- TABLE --- */}
+                <div style={styles.tableCard}>
                     {loading ? (
                         <div style={styles.loadingState}>
                             <div style={styles.spinner}></div>
-                            <p>Sedang memuat data...</p>
+                            <p>Memuat data...</p>
                         </div>
                     ) : (
-                        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                        <>
                             {dosens.length > 0 ? (
-                                dosens.map((dosen, index) => (
-                                    <li 
-                                        key={dosen.id} 
-                                        style={{
-                                            ...styles.listItem,
-                                            animationDelay: `${index * 0.1}s` // Efek muncul bergantian
-                                        }}
-                                    >
-                                        <div style={styles.itemInfo}>
-                                            {/* Avatar Inisial */}
-                                            <div style={styles.avatar}>
-                                                {dosen.nama_lengkap ? dosen.nama_lengkap.charAt(0).toUpperCase() : 'D'}
-                                            </div>
-                                            
-                                            <div>
-                                                <div style={styles.itemName}>{dosen.nama_lengkap}</div>
-                                                
-                                                <div style={styles.metaInfo}>
-                                                    <span style={styles.badgeId}>
-                                                        {dosen.nidn ? `NIDN: ${dosen.nidn}` : `NIP: ${dosen.nip || '-'}`}
-                                                    </span>
-                                                    <span style={styles.badgeJabatan}>
-                                                        {dosen.jabatan_fungsional.toUpperCase()}
-                                                    </span>
-                                                </div>
-                                                
-                                                {/* Badge Status */}
-                                                <span style={{
-                                                    ...styles.badgeStatus,
-                                                    background: dosen.status === 'aktif' ? '#dcfce7' : '#fee2e2',
-                                                    color: dosen.status === 'aktif' ? '#166534' : '#991b1b',
-                                                }}>
-                                                    ● {dosen.status}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div style={styles.itemActions}>
-                                            <Link href={`/dashboard/dosen/edit/${dosen.id}`}>
-                                                <button style={styles.editBtn}>Edit</button>
-                                            </Link>
-                                            <button 
-                                                onClick={() => handleDelete(dosen.id)} 
-                                                style={styles.deleteBtn}
-                                            >
-                                                Hapus
-                                            </button>
-                                        </div>
-                                    </li>
-                                ))
+                                <div style={styles.tableWrapper}>
+                                    <table style={styles.table}>
+                                        <thead>
+                                            <tr style={styles.tableHeadRow}>
+                                                <th style={styles.th}>Nama Dosen</th>
+                                                <th style={styles.th}>NIDN / NIP</th>
+                                                <th style={styles.th}>Jabatan</th>
+                                                <th style={styles.th}>Status</th>
+                                                <th style={{...styles.th, textAlign: 'right'}}>Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {dosens.map((d) => (
+                                                <tr key={d.id} style={styles.tableRow}>
+                                                    <td style={styles.td}>
+                                                        <div style={styles.userCell}>
+                                                            {/* Logic Avatar: Foto atau Inisial */}
+                                                            {d.foto && !d.foto.includes('gravatar') ? (
+                                                                <img src={d.foto} alt="foto" style={styles.avatarImg} />
+                                                            ) : (
+                                                                <div style={styles.avatarTable}>
+                                                                    {d.nama_lengkap.charAt(0).toUpperCase()}
+                                                                </div>
+                                                            )}
+                                                            <div style={styles.nameText}>{d.nama_lengkap}</div>
+                                                        </div>
+                                                    </td>
+                                                    <td style={styles.td}>
+                                                        {d.nidn || d.nip || '-'}
+                                                    </td>
+                                                    <td style={styles.td}>
+                                                        <span style={styles.badgeJabatan}>
+                                                            {d.jabatan_fungsional}
+                                                        </span>
+                                                    </td>
+                                                    <td style={styles.td}>
+                                                        <span style={d.status === 'aktif' ? styles.badgeActive : styles.badgeInactive}>
+                                                            {d.status}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{...styles.td, textAlign: 'right'}}>
+                                                        <Link href={`/dashboard/dosen/edit/${d.id}`}>
+                                                            <button style={styles.actionBtnEdit}>Edit</button>
+                                                        </Link>
+                                                        <button 
+                                                            onClick={() => handleDelete(d.id)}
+                                                            style={styles.actionBtnDelete}
+                                                        >
+                                                            Hapus
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             ) : (
                                 <div style={styles.emptyState}>
-                                    <p>📭 Belum ada data dosen.</p>
+                                    <div style={{fontSize: '40px', marginBottom: '10px'}}>👨‍🏫</div>
+                                    <h3>Belum ada data</h3>
+                                    <p>Silakan tambah data dosen baru.</p>
                                 </div>
                             )}
-                        </ul>
+                        </>
                     )}
                 </div>
-
-            </div>
+            </main>
         </div>
     );
 }
 
-// --- STYLES OBJECT ---
+// --- MODERN STYLES (Sama Persis dengan Dashboard Mahasiswa) ---
 const styles = {
-    container: {
-        minHeight: '100vh',
-        background: 'linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab)',
-        backgroundSize: '400% 400%',
-        animation: 'gradientBG 15s ease infinite',
-        padding: '40px 20px',
-        fontFamily: "'Inter', sans-serif",
-        position: 'relative',
-        display: 'flex',
-        justifyContent: 'center',
-    },
-    blob1: {
-        position: 'absolute', top: '10%', left: '5%', width: '300px', height: '300px',
-        background: 'rgba(255, 255, 255, 0.3)', borderRadius: '50%', filter: 'blur(80px)', zIndex: 0,
-    },
-    blob2: {
-        position: 'absolute', bottom: '10%', right: '5%', width: '300px', height: '300px',
-        background: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', filter: 'blur(80px)', zIndex: 0,
-    },
-    glassPanel: {
-        background: 'rgba(255, 255, 255, 0.9)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderRadius: '24px',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.1)',
-        width: '100%',
-        maxWidth: '900px',
-        padding: '40px',
-        zIndex: 1,
-        height: 'fit-content',
-        animation: 'slideIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)',
-    },
-    header: {
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px',
-    },
-    title: {
-        margin: 0, color: '#1e293b', fontSize: '28px', fontWeight: '800',
-    },
-    subtitle: {
-        margin: '5px 0 0 0', color: '#64748b', fontSize: '14px',
-    },
-    logoutBtn: {
-        padding: '10px 20px', background: '#fee2e2', color: '#ef4444', border: '1px solid #fca5a5',
-        borderRadius: '8px', cursor: 'pointer', fontWeight: '600', transition: 'all 0.2s',
-    },
-    divider: {
-        border: 'none', borderTop: '1px solid #e2e8f0', margin: '20px 0',
-    },
-    statsContainer: {
-        display: 'flex', gap: '15px', marginBottom: '30px',
-    },
-    statCard: {
-        background: '#f8fafc', padding: '15px 20px', borderRadius: '12px',
-        display: 'flex', alignItems: 'center', gap: '15px', border: '1px solid #e2e8f0',
-        minWidth: '200px',
-    },
-    actionBar: {
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px'
-    },
-    navGroup: {
-        display: 'flex', gap: '10px', background: '#f1f5f9', padding: '5px', borderRadius: '10px',
-    },
-    navBtnActive: {
-        padding: '8px 20px', background: 'white', color: '#2563eb', border: 'none',
-        borderRadius: '8px', fontWeight: '600', boxShadow: '0 2px 5px rgba(0,0,0,0.05)', cursor: 'default',
-    },
-    navBtnInactive: {
-        padding: '8px 20px', background: 'transparent', color: '#64748b', border: 'none',
-        borderRadius: '8px', fontWeight: '600', cursor: 'pointer',
-    },
-    addBtn: {
-        padding: '12px 24px', background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-        color: 'white', border: 'none', borderRadius: '10px', fontWeight: '600',
-        cursor: 'pointer', boxShadow: '0 4px 10px rgba(37, 99, 235, 0.2)', transition: 'transform 0.2s',
-    },
-    listContainer: {
-        marginTop: '20px',
-    },
-    listItem: {
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        background: 'white', padding: '20px', borderRadius: '16px', marginBottom: '12px',
-        border: '1px solid #f1f5f9', transition: 'transform 0.2s',
-        animation: 'slideIn 0.5s ease forwards', opacity: 0,
-    },
-    itemInfo: {
-        display: 'flex', alignItems: 'center', gap: '15px',
-    },
-    avatar: {
-        width: '50px', height: '50px', borderRadius: '50%', background: '#f0fdf4',
-        color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontWeight: 'bold', fontSize: '20px', border: '1px solid #bbf7d0',
-    },
-    itemName: {
-        fontWeight: '700', color: '#334155', fontSize: '16px', marginBottom: '4px',
-    },
-    metaInfo: {
-        display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap',
-    },
-    badgeId: {
-        fontSize: '12px', color: '#64748b', background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px',
-    },
-    badgeJabatan: {
-        fontSize: '11px', color: '#4f46e5', background: '#eef2ff', padding: '2px 8px', borderRadius: '4px', fontWeight: '600', border: '1px solid #e0e7ff',
-    },
-    badgeStatus: {
-        fontSize: '11px', padding: '3px 8px', borderRadius: '12px', fontWeight: '600', display: 'inline-block',
-    },
-    itemActions: {
-        display: 'flex', gap: '8px',
-    },
-    editBtn: {
-        padding: '8px 16px', background: '#f0f9ff', color: '#0ea5e9', border: 'none',
-        borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px',
-    },
-    deleteBtn: {
-        padding: '8px 16px', background: '#fef2f2', color: '#ef4444', border: 'none',
-        borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '13px',
-    },
-    loadingState: {
-        textAlign: 'center', padding: '50px', color: '#64748b',
-    },
-    spinner: {
-        width: '30px', height: '30px', border: '3px solid #e2e8f0', borderTop: '3px solid #2563eb',
-        borderRadius: '50%', margin: '0 auto 15px', animation: 'spin 1s linear infinite',
-    },
-    emptyState: {
-        textAlign: 'center', padding: '40px', color: '#94a3b8', background: '#f8fafc', borderRadius: '12px',
-    }
+    container: { minHeight: '100vh', backgroundColor: '#f9fafb', color: '#111827' },
+    
+    // Navbar
+    navbar: { backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb', padding: '0 24px', height: '64px', display: 'flex', alignItems: 'center', position: 'sticky', top: 0, zIndex: 50 },
+    navContent: { width: '100%', maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+    brand: { fontWeight: '700', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '10px', color: '#111827' },
+    logoIcon: { background: '#eff6ff', padding: '6px', borderRadius: '8px', fontSize: '16px' },
+    profileSection: { display: 'flex', alignItems: 'center', gap: '20px' },
+    userBadge: { display: 'flex', alignItems: 'center', gap: '10px' },
+    avatarSmall: { width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#111827', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '14px', fontWeight: '600' },
+    userName: { fontSize: '14px', fontWeight: '500' },
+    logoutBtn: { fontSize: '13px', color: '#ef4444', background: 'transparent', border: '1px solid #fee2e2', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.2s' },
+    
+    // Layout Utama
+    mainContent: { maxWidth: '1200px', margin: '0 auto', padding: '32px 24px', animation: 'fadeIn 0.5s ease-out' },
+    pageHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' },
+    pageTitle: { fontSize: '24px', fontWeight: '700', margin: '0 0 8px 0', color: '#111827' },
+    pageSubtitle: { fontSize: '14px', color: '#6b7280', margin: 0 },
+    addBtn: { backgroundColor: '#111827', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', transition: 'transform 0.1s' },
+
+    // Stats Card
+    statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '32px' },
+    statCard: { background: 'white', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
+    statLabel: { fontSize: '13px', color: '#6b7280', fontWeight: '500', marginBottom: '8px' },
+    statValue: { fontSize: '28px', fontWeight: '700', color: '#111827', marginBottom: '4px' },
+    statValueActive: { fontSize: '28px', fontWeight: '700', color: '#10b981', marginBottom: '4px' },
+    statDesc: { fontSize: '13px', color: '#9ca3af' },
+
+    // Tab Navigasi
+    tabsContainer: { display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid #e5e7eb', paddingBottom: '1px' },
+    tabActive: { background: 'transparent', border: 'none', borderBottom: '2px solid #111827', padding: '10px 4px', fontWeight: '600', color: '#111827', fontSize: '14px', cursor: 'default', marginBottom: '-1px' },
+    tabInactive: { background: 'transparent', border: 'none', padding: '10px 4px', fontWeight: '500', color: '#6b7280', fontSize: '14px', cursor: 'pointer', transition: 'color 0.2s' },
+
+    // Table Styles
+    tableCard: { background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', overflow: 'hidden' },
+    tableWrapper: { overflowX: 'auto' },
+    table: { width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' },
+    tableHeadRow: { backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' },
+    th: { padding: '16px 24px', fontWeight: '600', color: '#374151', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' },
+    tableRow: { borderBottom: '1px solid #f3f4f6', transition: 'background-color 0.1s' },
+    td: { padding: '16px 24px', color: '#111827', verticalAlign: 'middle' },
+    
+    // User Info di Table
+    userCell: { display: 'flex', alignItems: 'center', gap: '12px' },
+    avatarTable: { width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#eef2ff', color: '#4f46e5', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: '600', fontSize: '14px' },
+    avatarImg: { width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #e5e7eb' },
+    nameText: { fontWeight: '600', color: '#111827' },
+    
+    // Badges
+    badgeJabatan: { fontSize: '12px', background: '#f3f4f6', padding: '4px 8px', borderRadius: '6px', color: '#374151', fontWeight: '500', textTransform: 'capitalize' },
+    badgeActive: { fontSize: '12px', background: '#dcfce7', color: '#166534', padding: '4px 8px', borderRadius: '99px', fontWeight: '600', textTransform: 'capitalize' },
+    badgeInactive: { fontSize: '12px', background: '#fee2e2', color: '#991b1b', padding: '4px 8px', borderRadius: '99px', fontWeight: '600', textTransform: 'capitalize' },
+
+    // Buttons Aksi
+    actionBtnEdit: { background: 'transparent', border: 'none', color: '#2563eb', fontWeight: '600', fontSize: '13px', cursor: 'pointer', padding: '4px 8px', marginRight: '8px' },
+    actionBtnDelete: { background: 'transparent', border: 'none', color: '#ef4444', fontWeight: '600', fontSize: '13px', cursor: 'pointer', padding: '4px 8px' },
+    
+    // Loading & Empty
+    loadingState: { padding: '60px', textAlign: 'center', color: '#6b7280' },
+    spinner: { border: '3px solid #f3f3f3', borderTop: '3px solid #111827', borderRadius: '50%', width: '24px', height: '24px', animation: 'spin 1s linear infinite', margin: '0 auto 10px' },
+    emptyState: { padding: '60px', textAlign: 'center', color: '#6b7280' },
 };

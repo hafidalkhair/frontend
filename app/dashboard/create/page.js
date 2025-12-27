@@ -48,6 +48,7 @@ export default function CreateMahasiswa() {
         });
     };
 
+    // --- LOGIC SUBMIT DENGAN DETEKSI ERROR DETAIL ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -59,7 +60,8 @@ export default function CreateMahasiswa() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json' // Tambahkan ini agar Laravel kirim JSON error
                 },
                 body: JSON.stringify(formData)
             });
@@ -70,10 +72,18 @@ export default function CreateMahasiswa() {
                 alert('✨ Berhasil menambah mahasiswa!');
                 router.push('/dashboard');
             } else {
-                setError(data.message || 'Gagal menyimpan data.');
+                // --- PERBAIKAN DI SINI: BACA ERROR VALIDASI ---
+                if (data.errors) {
+                    // Ambil pesan error pertama dari Laravel
+                    const firstField = Object.keys(data.errors)[0];
+                    const firstMsg = data.errors[firstField][0];
+                    setError(`Gagal: ${firstMsg} (${firstField})`);
+                } else {
+                    setError(data.message || 'Gagal menyimpan data.');
+                }
             }
         } catch (err) {
-            setError('Terjadi kesalahan koneksi.');
+            setError('Terjadi kesalahan koneksi ke server.');
         } finally {
             setLoading(false);
         }
@@ -81,34 +91,21 @@ export default function CreateMahasiswa() {
 
     return (
         <div style={styles.container}>
-             {/* Styles Global untuk Animasi */}
-             <style jsx global>{`
-                @keyframes gradientBG {
-                    0% { background-position: 0% 50%; }
-                    50% { background-position: 100% 50%; }
-                    100% { background-position: 0% 50%; }
-                }
-                @keyframes slideUp {
-                    from { opacity: 0; transform: translateY(30px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
+            <style jsx global>{`
+                body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f9fafb; }
             `}</style>
 
-            {/* Background Blobs */}
-            <div style={styles.blob1}></div>
-            <div style={styles.blob2}></div>
-
-            <div style={styles.glassPanel}>
+            <div style={styles.card}>
                 {/* Header Section */}
-                <div style={styles.header}>
+                <div style={styles.cardHeader}>
+                    <div>
+                        <h1 style={styles.title}>Tambah Mahasiswa</h1>
+                        <p style={styles.subtitle}>Isi formulir di bawah untuk menambahkan data mahasiswa baru.</p>
+                    </div>
                     <Link href="/dashboard" style={{ textDecoration: 'none' }}>
-                        <button style={styles.backBtn}>← Kembali</button>
+                        <button style={styles.backBtn}>Kembali</button>
                     </Link>
-                    <h1 style={styles.title}>Tambah Mahasiswa</h1>
                 </div>
-
-                <p style={styles.subtitle}>Isi formulir di bawah untuk menambahkan data mahasiswa baru ke sistem.</p>
-                <hr style={styles.divider} />
 
                 {error && (
                     <div style={styles.errorBox}>
@@ -116,14 +113,16 @@ export default function CreateMahasiswa() {
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} style={styles.formGrid}>
                     
                     {/* Menggunakan Grid Layout agar rapi (2 Kolom) */}
                     <div style={styles.gridContainer}>
                         
                         {/* --- KOLOM KIRI (Akademik & Pribadi Utama) --- */}
                         <div style={styles.column}>
-                            <div style={styles.formGroup}>
+                            <h3 style={styles.sectionTitle}>Data Akademik</h3>
+
+                            <div style={styles.inputGroup}>
                                 <label style={styles.label}>NIM <span style={{color:'#ef4444'}}>*</span></label>
                                 <input 
                                     type="text" name="nim" maxLength="13" 
@@ -132,7 +131,7 @@ export default function CreateMahasiswa() {
                                 />
                             </div>
 
-                            <div style={styles.formGroup}>
+                            <div style={styles.inputGroup}>
                                 <label style={styles.label}>Nama Lengkap <span style={{color:'#ef4444'}}>*</span></label>
                                 <input 
                                     type="text" name="nama" 
@@ -141,12 +140,12 @@ export default function CreateMahasiswa() {
                                 />
                             </div>
 
-                            <div style={styles.formGroup}>
+                            <div style={styles.inputGroup}>
                                 <label style={styles.label}>Program Studi <span style={{color:'#ef4444'}}>*</span></label>
                                 <select 
                                     name="program_studi_id" 
                                     value={formData.program_studi_id} onChange={handleChange} required 
-                                    style={styles.select}
+                                    style={styles.input}
                                 >
                                     <option value="">- Pilih Program Studi -</option>
                                     {listProdi.map((prodi) => (
@@ -157,9 +156,9 @@ export default function CreateMahasiswa() {
                                 </select>
                             </div>
 
-                             <div style={styles.formGroup}>
+                             <div style={styles.inputGroup}>
                                 <label style={styles.label}>Jenis Kelamin <span style={{color:'#ef4444'}}>*</span></label>
-                                <select name="jenis_kelamin" value={formData.jenis_kelamin} onChange={handleChange} style={styles.select}>
+                                <select name="jenis_kelamin" value={formData.jenis_kelamin} onChange={handleChange} style={styles.input}>
                                     <option value="1">Laki-laki</option>
                                     <option value="0">Perempuan</option>
                                 </select>
@@ -168,7 +167,9 @@ export default function CreateMahasiswa() {
 
                         {/* --- KOLOM KANAN (Kontak & Lahir) --- */}
                         <div style={styles.column}>
-                            <div style={styles.formGroup}>
+                            <h3 style={styles.sectionTitle}>Data Pribadi & Kontak</h3>
+
+                            <div style={styles.inputGroup}>
                                 <label style={styles.label}>Email <span style={{color:'#ef4444'}}>*</span></label>
                                 <input 
                                     type="email" name="email" 
@@ -177,7 +178,7 @@ export default function CreateMahasiswa() {
                                 />
                             </div>
 
-                            <div style={styles.formGroup}>
+                            <div style={styles.inputGroup}>
                                 <label style={styles.label}>Nomor HP <span style={{color:'#ef4444'}}>*</span></label>
                                 <input 
                                     type="text" name="nomor_hp" 
@@ -186,8 +187,8 @@ export default function CreateMahasiswa() {
                                 />
                             </div>
 
-                            <div style={{ display: 'flex', gap: '15px' }}>
-                                <div style={{...styles.formGroup, flex: 1}}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                                <div style={styles.inputGroup}>
                                     <label style={styles.label}>Tempat Lahir</label>
                                     <input 
                                         type="text" name="tempat_lahir" 
@@ -195,7 +196,7 @@ export default function CreateMahasiswa() {
                                         style={styles.input} 
                                     />
                                 </div>
-                                <div style={{...styles.formGroup, flex: 1}}>
+                                <div style={styles.inputGroup}>
                                     <label style={styles.label}>Tgl Lahir</label>
                                     <input 
                                         type="date" name="tanggal_lahir" 
@@ -205,9 +206,9 @@ export default function CreateMahasiswa() {
                                 </div>
                             </div>
 
-                            <div style={styles.formGroup}>
+                            <div style={styles.inputGroup}>
                                 <label style={styles.label}>Golongan Darah</label>
-                                <select name="golongan_darah" value={formData.golongan_darah} onChange={handleChange} style={styles.select}>
+                                <select name="golongan_darah" value={formData.golongan_darah} onChange={handleChange} style={styles.input}>
                                     <option value="">- Pilih -</option>
                                     <option value="A">A</option>
                                     <option value="B">B</option>
@@ -220,8 +221,8 @@ export default function CreateMahasiswa() {
 
                     {/* Footer Buttons */}
                     <div style={styles.buttonGroup}>
-                        <button type="submit" disabled={loading} style={styles.saveBtn}>
-                            {loading ? '⏳ Menyimpan...' : '💾 Simpan Data'}
+                        <button type="submit" disabled={loading} style={loading ? styles.submitBtnDisabled : styles.submitBtn}>
+                            {loading ? 'Menyimpan...' : 'Simpan Data Mahasiswa'}
                         </button>
                     </div>
 
@@ -231,93 +232,57 @@ export default function CreateMahasiswa() {
     );
 }
 
-// --- STYLES OBJECT ---
+// --- STYLES (Clean & Modern) ---
 const styles = {
     container: {
         minHeight: '100vh',
-        background: 'linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab)',
-        backgroundSize: '400% 400%',
-        animation: 'gradientBG 15s ease infinite',
-        padding: '40px 20px',
-        fontFamily: "'Inter', sans-serif",
-        position: 'relative',
+        backgroundColor: '#f9fafb',
         display: 'flex',
         justifyContent: 'center',
-        alignItems: 'flex-start', // Agar form panjang bisa di-scroll
+        padding: '40px 20px',
     },
-    blob1: {
-        position: 'absolute', top: '10%', left: '5%', width: '300px', height: '300px',
-        background: 'rgba(255, 255, 255, 0.3)', borderRadius: '50%', filter: 'blur(80px)', zIndex: 0,
-    },
-    blob2: {
-        position: 'absolute', bottom: '10%', right: '5%', width: '300px', height: '300px',
-        background: 'rgba(255, 255, 255, 0.2)', borderRadius: '50%', filter: 'blur(80px)', zIndex: 0,
-    },
-    glassPanel: {
-        background: 'rgba(255, 255, 255, 0.95)', // Sedikit lebih solid agar form terbaca jelas
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderRadius: '24px',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.1)',
+    card: {
+        backgroundColor: '#ffffff',
         width: '100%',
-        maxWidth: '900px', // Lebih lebar untuk 2 kolom
-        padding: '50px',
-        zIndex: 1,
-        animation: 'slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1)',
-        marginBottom: '50px',
+        maxWidth: '900px',
+        padding: '40px',
+        borderRadius: '16px',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+        border: '1px solid #e5e7eb',
     },
-    header: {
-        display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '10px'
+    cardHeader: {
+        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', borderBottom: '1px solid #e5e7eb', paddingBottom: '24px'
     },
-    title: {
-        margin: 0, color: '#1e293b', fontSize: '28px', fontWeight: '800',
-    },
-    subtitle: {
-        color: '#64748b', fontSize: '14px', marginBottom: '20px', marginLeft: '5px'
-    },
-    divider: {
-        border: 'none', borderTop: '1px solid #e2e8f0', marginBottom: '30px',
-    },
+    title: { fontSize: '24px', fontWeight: '700', color: '#111827', margin: '0 0 8px 0' },
+    subtitle: { fontSize: '14px', color: '#6b7280', margin: 0 },
     backBtn: {
-        background: 'transparent', border: '1px solid #e2e8f0', padding: '8px 15px', borderRadius: '8px',
-        cursor: 'pointer', color: '#64748b', fontWeight: '600', transition: 'all 0.2s', fontSize: '13px'
+        backgroundColor: 'white', border: '1px solid #d1d5db', padding: '8px 16px', borderRadius: '8px', color: '#374151', fontWeight: '500', cursor: 'pointer', fontSize: '14px'
     },
     errorBox: {
-        background: '#fee2e2', color: '#b91c1c', padding: '15px', borderRadius: '12px',
-        marginBottom: '25px', fontSize: '14px', border: '1px solid #fca5a5', fontWeight: '500'
+        backgroundColor: '#fef2f2', color: '#991b1b', padding: '12px', borderRadius: '8px', marginBottom: '24px', fontSize: '14px', border: '1px solid #fee2e2'
     },
-    // Grid System
+    
+    // Form Layout
+    formGrid: { display: 'flex', flexDirection: 'column', gap: '32px' },
     gridContainer: {
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', // Responsif: jadi 1 kolom di HP, 2 di Desktop
-        gap: '30px',
-        marginBottom: '30px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+        gap: '40px',
     },
-    column: {
-        display: 'flex', flexDirection: 'column', gap: '20px'
-    },
-    formGroup: {
-        display: 'flex', flexDirection: 'column', gap: '8px',
-    },
-    label: {
-        fontSize: '13px', fontWeight: '600', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px'
-    },
+    column: { display: 'flex', flexDirection: 'column', gap: '20px' },
+    sectionTitle: { fontSize: '16px', fontWeight: '600', color: '#111827', borderLeft: '4px solid #111827', paddingLeft: '12px', marginBottom: '8px' },
+    
+    inputGroup: { display: 'flex', flexDirection: 'column', gap: '6px' },
+    label: { fontSize: '13px', fontWeight: '500', color: '#374151' },
     input: {
-        padding: '12px 16px', borderRadius: '10px', border: '1px solid #cbd5e1',
-        fontSize: '15px', background: '#f8fafc', transition: 'all 0.2s', outline: 'none',
-        color: '#1e293b', width: '100%', boxSizing: 'border-box' // Penting agar tidak overflow
+        padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '14px', color: '#111827', backgroundColor: '#f9fafb', outline: 'none', width: '100%', boxSizing: 'border-box'
     },
-    select: {
-        padding: '12px 16px', borderRadius: '10px', border: '1px solid #cbd5e1',
-        fontSize: '15px', background: '#f8fafc', transition: 'all 0.2s', outline: 'none',
-        color: '#1e293b', width: '100%', cursor: 'pointer', appearance: 'none' // Modern select
+    
+    buttonGroup: { display: 'flex', justifyContent: 'flex-end', paddingTop: '24px', borderTop: '1px solid #e5e7eb' },
+    submitBtn: {
+        backgroundColor: '#111827', color: 'white', padding: '12px 24px', borderRadius: '8px', border: 'none', fontWeight: '600', fontSize: '14px', cursor: 'pointer',
     },
-    buttonGroup: {
-        display: 'flex', justifyContent: 'flex-end', paddingTop: '20px', borderTop: '1px solid #f1f5f9'
-    },
-    saveBtn: {
-        padding: '14px 40px', background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-        color: 'white', border: 'none', borderRadius: '12px', fontWeight: '600', fontSize: '16px',
-        cursor: 'pointer', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)', transition: 'transform 0.2s',
-    },
+    submitBtnDisabled: {
+        backgroundColor: '#9ca3af', color: 'white', padding: '12px 24px', borderRadius: '8px', border: 'none', fontWeight: '600', fontSize: '14px', cursor: 'not-allowed',
+    }
 };

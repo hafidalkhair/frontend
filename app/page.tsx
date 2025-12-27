@@ -1,40 +1,30 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, CSSProperties } from 'react'; // 1. Import CSSProperties
+import { useState, CSSProperties } from 'react';
 
 export default function Home() {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
     <div style={styles.container}>
-      {/* CSS Keyframes */}
+      {/* Simple CSS Reset & Animation */}
       <style jsx global>{`
-        @keyframes gradientBG {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        @keyframes float {
-          0% { transform: translateY(0px); }
-          50% { transform: translateY(-15px); }
-          100% { transform: translateY(0px); }
-        }
-        @keyframes slideUp {
-          0% { opacity: 0; transform: translateY(30px); }
-          100% { opacity: 1; transform: translateY(0); }
+        body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
 
-      {/* Dekorasi Background */}
-      <div style={styles.blob1}></div>
-      <div style={styles.blob2}></div>
-
       <div style={styles.card}>
         
-        {/* Logo / Icon */}
-        <div style={styles.iconWrapper}>
-          <span style={styles.icon}>🎓</span>
+        {/* Header / Icon Area */}
+        <div style={styles.headerSection}>
+            <div style={styles.iconWrapper}>
+                <span style={styles.icon}>🎓</span>
+            </div>
+            <div style={styles.badge}>v2.0 Released</div>
         </div>
 
         <h1 style={styles.title}>
@@ -42,28 +32,30 @@ export default function Home() {
         </h1>
         
         <p style={styles.subtitle}>
-          Selamat datang di Sistem Informasi Akademik Terpadu. <br/>
-          Platform digital masa depan untuk Mahasiswa dan Dosen.
+          Sistem Informasi Akademik Terpadu.<br/>
+          Kelola data Mahasiswa dan Dosen dengan lebih efisien, cepat, dan modern.
         </p>
 
-        {/* Tombol */}
-        <Link href="/login">
-          <button 
-            style={{
-              ...styles.button,
-              ...(isHovered ? styles.buttonHover : {})
-            }}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-          >
-            Masuk ke Aplikasi
-            <span style={{ marginLeft: '10px' }}>→</span>
-          </button>
-        </Link>
+        {/* Action Area */}
+        <div style={styles.actionArea}>
+            <Link href="/login" style={{ textDecoration: 'none', width: '100%' }}>
+            <button 
+                style={{
+                ...styles.button,
+                ...(isHovered ? styles.buttonHover : {})
+                }}
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+            >
+                Masuk ke Dashboard
+                <span style={styles.arrow}>→</span>
+            </button>
+            </Link>
+        </div>
 
         <div style={styles.footer}>
            <p style={styles.footerText}>
-             🚀 Project API Laravel & Next.js
+             Powered by Laravel API & Next.js
            </p>
         </div>
 
@@ -72,117 +64,116 @@ export default function Home() {
   );
 }
 
-// --- Styles ---
+// --- Modern Minimalist Styles ---
 
-// 2. Tambahkan tipe data explicit di sini agar TypeScript tidak error
 const styles: { [key: string]: CSSProperties } = {
     container: {
         minHeight: '100vh',
         display: 'flex',
+        flexDirection: 'column',
         justifyContent: 'center',
         alignItems: 'center',
-        background: 'linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab)',
-        backgroundSize: '400% 400%',
-        animation: 'gradientBG 15s ease infinite',
-        fontFamily: "'Inter', sans-serif",
+        backgroundColor: '#f9fafb', // Light Gray background (Konsisten dengan Login)
+        color: '#111827',
         padding: '20px',
-        position: 'relative', // Error position hilang
-        overflow: 'hidden',
-    },
-    blob1: {
-        position: 'absolute',
-        top: '10%',
-        left: '10%',
-        width: '300px',
-        height: '300px',
-        background: 'rgba(255, 255, 255, 0.3)',
-        borderRadius: '50%',
-        filter: 'blur(80px)',
-        zIndex: 0,
-    },
-    blob2: {
-        position: 'absolute',
-        bottom: '10%',
-        right: '10%',
-        width: '350px',
-        height: '350px',
-        background: 'rgba(255, 255, 255, 0.2)',
-        borderRadius: '50%',
-        filter: 'blur(100px)',
-        zIndex: 0,
     },
     card: {
-        background: 'rgba(255, 255, 255, 0.85)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        padding: '60px 40px',
+        background: '#ffffff',
+        padding: '48px',
         borderRadius: '24px',
-        boxShadow: '0 20px 50px rgba(0, 0, 0, 0.15)',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025)', // Soft shadow
         width: '100%',
-        maxWidth: '480px',
-        textAlign: 'center', // Error textAlign hilang
-        border: '1px solid rgba(255, 255, 255, 0.5)',
-        zIndex: 1,
-        animation: 'slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)',
+        maxWidth: '500px',
+        textAlign: 'center',
+        border: '1px solid #e5e7eb', // Thin border
+        animation: 'fadeInUp 0.6s ease-out',
+    },
+    headerSection: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '16px',
+        marginBottom: '24px',
     },
     iconWrapper: {
-        fontSize: '60px', 
-        marginBottom: '20px',
-        display: 'inline-block',
-        animation: 'float 3s ease-in-out infinite',
-        filter: 'drop-shadow(0 10px 10px rgba(0,0,0,0.1))'
+        fontSize: '40px',
+        width: '80px',
+        height: '80px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        background: '#eff6ff', // Light Blue circle
+        borderRadius: '20px',
+        marginBottom: '8px',
     },
     icon: {
+        lineHeight: 1,
         display: 'block',
     },
+    badge: {
+        fontSize: '12px',
+        fontWeight: '600',
+        color: '#4f46e5',
+        backgroundColor: '#eef2ff',
+        padding: '4px 12px',
+        borderRadius: '999px',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+    },
     title: {
-        color: '#1e293b', 
-        margin: '0 0 15px 0', 
-        fontSize: '36px',
-        fontWeight: '800', // TypeScript menerima number atau string untuk fontWeight
-        letterSpacing: '-1px',
-        background: 'linear-gradient(to right, #2563eb, #9333ea)',
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
+        color: '#111827', 
+        margin: '0 0 16px 0', 
+        fontSize: '32px',
+        fontWeight: '800',
+        letterSpacing: '-0.025em',
+        lineHeight: 1.2,
     },
     subtitle: {
-        color: '#64748b', 
+        color: '#6b7280', // Cool Gray
         fontSize: '16px', 
         lineHeight: '1.6', 
         marginBottom: '40px',
-        fontWeight: '500',
+        fontWeight: '400',
+        maxWidth: '80%',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+    },
+    actionArea: {
+        width: '100%',
+        marginBottom: '32px',
     },
     button: {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%',
-        padding: '18px',
-        background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+        padding: '16px 24px',
+        backgroundColor: '#111827', // Dark Slate / Black (Konsisten dengan Login)
         color: 'white',
         border: 'none',
-        borderRadius: '14px',
+        borderRadius: '12px',
         fontSize: '16px',
         fontWeight: '600',
         cursor: 'pointer',
-        boxShadow: '0 10px 20px -5px rgba(37, 99, 235, 0.4)',
-        transition: 'all 0.3s ease',
-        transform: 'scale(1)',
+        transition: 'all 0.2s ease',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
     },
     buttonHover: {
-        transform: 'scale(1.02) translateY(-2px)',
-        boxShadow: '0 15px 30px -5px rgba(37, 99, 235, 0.5)',
-        background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+        backgroundColor: '#000000',
+        transform: 'translateY(-2px)',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+    },
+    arrow: {
+        marginLeft: '8px',
+        transition: 'transform 0.2s ease',
     },
     footer: {
-        marginTop: '40px', 
-        borderTop: '1px solid rgba(0,0,0,0.05)', 
-        paddingTop: '25px'
+        borderTop: '1px solid #f3f4f6', 
+        paddingTop: '24px',
     },
     footerText: {
         fontSize: '13px', 
-        color: '#94a3b8',
+        color: '#9ca3af',
         fontWeight: '500',
-        letterSpacing: '0.5px'
     }
 };
