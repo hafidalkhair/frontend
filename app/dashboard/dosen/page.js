@@ -22,12 +22,12 @@ export default function DosenPage() {
 
         setUserName(name);
 
-        // Pastikan endpoint sesuai dengan route di Laravel (api/dosen)
         fetch('https://hafid.copium.id/api/dosens', {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
+                'Accept': 'application/json'
             }
         })
         .then(res => {
@@ -35,7 +35,7 @@ export default function DosenPage() {
             return res.json();
         })
         .then(data => {
-            setDosens(data.data || data);
+            setDosens(Array.isArray(data) ? data : data.data || []);
             setLoading(false);
         })
         .catch(err => {
@@ -89,7 +89,6 @@ export default function DosenPage() {
                 }
             `}</style>
 
-            {/* --- TOP NAVBAR --- */}
             <nav style={styles.navbar}>
                 <div style={styles.navContent}>
                     <div style={styles.brand}>
@@ -101,29 +100,23 @@ export default function DosenPage() {
                             <div style={styles.avatarSmall}>{userName ? userName.charAt(0).toUpperCase() : 'A'}</div>
                             <span style={styles.userName}>{userName || 'Admin'}</span>
                         </div>
-                        <button onClick={handleLogout} style={styles.logoutBtn}>
-                            Keluar
-                        </button>
+                        <button onClick={handleLogout} style={styles.logoutBtn}>Keluar</button>
                     </div>
                 </div>
             </nav>
 
             <main style={styles.mainContent}>
                 
-                {/* --- HEADER --- */}
                 <div style={styles.pageHeader}>
                     <div>
                         <h1 style={styles.pageTitle}>Dashboard Dosen</h1>
                         <p style={styles.pageSubtitle}>Kelola data pengajar dan status kepegawaian.</p>
                     </div>
                     <Link href="/dashboard/dosen/create">
-                        <button style={styles.addBtn}>
-                            + Tambah Dosen
-                        </button>
+                        <button style={styles.addBtn}>+ Tambah Dosen</button>
                     </Link>
                 </div>
 
-                {/* --- STATS --- */}
                 <div style={styles.statsGrid}>
                     <div style={styles.statCard}>
                         <div style={styles.statLabel}>Total Dosen</div>
@@ -133,10 +126,10 @@ export default function DosenPage() {
                      <div style={styles.statCard}>
                         <div style={styles.statLabel}>Status Data</div>
                         <div style={styles.statValueActive}>Sinkron</div>
+                        <div style={styles.statDesc}>Terhubung ke Database</div>
                     </div>
                 </div>
 
-                {/* --- TABS --- */}
                 <div style={styles.tabsContainer}>
                     <Link href="/dashboard" style={{textDecoration: 'none'}}>
                         <button style={styles.tabInactive}>Mahasiswa</button>
@@ -144,7 +137,6 @@ export default function DosenPage() {
                     <button style={styles.tabActive}>Dosen Pengajar</button>
                 </div>
 
-                {/* --- TABLE --- */}
                 <div style={styles.tableCard}>
                     {loading ? (
                         <div style={styles.loadingState}>
@@ -170,14 +162,22 @@ export default function DosenPage() {
                                                 <tr key={d.id} style={styles.tableRow}>
                                                     <td style={styles.td}>
                                                         <div style={styles.userCell}>
-                                                            {/* Logic Avatar: Foto atau Inisial */}
-                                                            {d.foto && !d.foto.includes('gravatar') ? (
-                                                                <img src={d.foto} alt="foto" style={styles.avatarImg} />
+                                                            
+                                                            {/* --- LOGIC GAMBAR DIPERBAIKI --- */}
+                                                            {/* Jika ada URL foto di database, TAMPILKAN IMAGE. Tidak peduli error atau tidak. */}
+                                                            {d.foto ? (
+                                                                <img 
+                                                                    src={d.foto} 
+                                                                    alt={d.nama_lengkap} 
+                                                                    style={styles.avatarImg}
+                                                                />
                                                             ) : (
+                                                                // Hanya jika kolom foto NULL, baru tampilkan inisial
                                                                 <div style={styles.avatarTable}>
                                                                     {d.nama_lengkap.charAt(0).toUpperCase()}
                                                                 </div>
                                                             )}
+                                                            
                                                             <div style={styles.nameText}>{d.nama_lengkap}</div>
                                                         </div>
                                                     </td>
@@ -225,11 +225,9 @@ export default function DosenPage() {
     );
 }
 
-// --- MODERN STYLES (Sama Persis dengan Dashboard Mahasiswa) ---
+// --- MODERN STYLES ---
 const styles = {
     container: { minHeight: '100vh', backgroundColor: '#f9fafb', color: '#111827' },
-    
-    // Navbar
     navbar: { backgroundColor: '#ffffff', borderBottom: '1px solid #e5e7eb', padding: '0 24px', height: '64px', display: 'flex', alignItems: 'center', position: 'sticky', top: 0, zIndex: 50 },
     navContent: { width: '100%', maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     brand: { fontWeight: '700', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '10px', color: '#111827' },
@@ -239,28 +237,20 @@ const styles = {
     avatarSmall: { width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#111827', color: 'white', display: 'flex', justifyContent: 'center', alignItems: 'center', fontSize: '14px', fontWeight: '600' },
     userName: { fontSize: '14px', fontWeight: '500' },
     logoutBtn: { fontSize: '13px', color: '#ef4444', background: 'transparent', border: '1px solid #fee2e2', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.2s' },
-    
-    // Layout Utama
     mainContent: { maxWidth: '1200px', margin: '0 auto', padding: '32px 24px', animation: 'fadeIn 0.5s ease-out' },
     pageHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' },
     pageTitle: { fontSize: '24px', fontWeight: '700', margin: '0 0 8px 0', color: '#111827' },
     pageSubtitle: { fontSize: '14px', color: '#6b7280', margin: 0 },
     addBtn: { backgroundColor: '#111827', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: '600', fontSize: '14px', cursor: 'pointer', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', transition: 'transform 0.1s' },
-
-    // Stats Card
     statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '32px' },
     statCard: { background: 'white', padding: '24px', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' },
     statLabel: { fontSize: '13px', color: '#6b7280', fontWeight: '500', marginBottom: '8px' },
     statValue: { fontSize: '28px', fontWeight: '700', color: '#111827', marginBottom: '4px' },
     statValueActive: { fontSize: '28px', fontWeight: '700', color: '#10b981', marginBottom: '4px' },
     statDesc: { fontSize: '13px', color: '#9ca3af' },
-
-    // Tab Navigasi
     tabsContainer: { display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid #e5e7eb', paddingBottom: '1px' },
     tabActive: { background: 'transparent', border: 'none', borderBottom: '2px solid #111827', padding: '10px 4px', fontWeight: '600', color: '#111827', fontSize: '14px', cursor: 'default', marginBottom: '-1px' },
     tabInactive: { background: 'transparent', border: 'none', padding: '10px 4px', fontWeight: '500', color: '#6b7280', fontSize: '14px', cursor: 'pointer', transition: 'color 0.2s' },
-
-    // Table Styles
     tableCard: { background: 'white', borderRadius: '12px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', overflow: 'hidden' },
     tableWrapper: { overflowX: 'auto' },
     table: { width: '100%', borderCollapse: 'collapse', fontSize: '14px', textAlign: 'left' },
@@ -268,23 +258,15 @@ const styles = {
     th: { padding: '16px 24px', fontWeight: '600', color: '#374151', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' },
     tableRow: { borderBottom: '1px solid #f3f4f6', transition: 'background-color 0.1s' },
     td: { padding: '16px 24px', color: '#111827', verticalAlign: 'middle' },
-    
-    // User Info di Table
     userCell: { display: 'flex', alignItems: 'center', gap: '12px' },
     avatarTable: { width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#eef2ff', color: '#4f46e5', display: 'flex', justifyContent: 'center', alignItems: 'center', fontWeight: '600', fontSize: '14px' },
     avatarImg: { width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #e5e7eb' },
     nameText: { fontWeight: '600', color: '#111827' },
-    
-    // Badges
     badgeJabatan: { fontSize: '12px', background: '#f3f4f6', padding: '4px 8px', borderRadius: '6px', color: '#374151', fontWeight: '500', textTransform: 'capitalize' },
     badgeActive: { fontSize: '12px', background: '#dcfce7', color: '#166534', padding: '4px 8px', borderRadius: '99px', fontWeight: '600', textTransform: 'capitalize' },
     badgeInactive: { fontSize: '12px', background: '#fee2e2', color: '#991b1b', padding: '4px 8px', borderRadius: '99px', fontWeight: '600', textTransform: 'capitalize' },
-
-    // Buttons Aksi
     actionBtnEdit: { background: 'transparent', border: 'none', color: '#2563eb', fontWeight: '600', fontSize: '13px', cursor: 'pointer', padding: '4px 8px', marginRight: '8px' },
     actionBtnDelete: { background: 'transparent', border: 'none', color: '#ef4444', fontWeight: '600', fontSize: '13px', cursor: 'pointer', padding: '4px 8px' },
-    
-    // Loading & Empty
     loadingState: { padding: '60px', textAlign: 'center', color: '#6b7280' },
     spinner: { border: '3px solid #f3f3f3', borderTop: '3px solid #111827', borderRadius: '50%', width: '24px', height: '24px', animation: 'spin 1s linear infinite', margin: '0 auto 10px' },
     emptyState: { padding: '60px', textAlign: 'center', color: '#6b7280' },
